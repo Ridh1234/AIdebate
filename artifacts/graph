@@ -1,0 +1,16 @@
+digraph SelfHealingDAG {
+	bgcolor=white rankdir=LR
+	start [label=START color="#555555" fontname=Helvetica shape=box style=rounded]
+	inference [label="InferenceNode
+(DistilBERT)" color="#555555" fontname=Helvetica shape=box style=rounded]
+	confidence_check [label="ConfidenceCheckNode
+(threshold→accept/fallback)" color="#555555" fontname=Helvetica shape=box style=rounded]
+	fallback [label="FallbackNode
+(user clarification)" color="#555555" fontname=Helvetica shape=box style=rounded]
+	end [label=END color="#555555" fontname=Helvetica shape=box style=rounded]
+	start -> inference [color="#777777"]
+	inference -> confidence_check [color="#777777"]
+	confidence_check -> end [label=accept color="#777777" fontsize=10]
+	confidence_check -> fallback [label=fallback color="#777777" fontsize=10]
+	fallback -> end [color="#777777"]
+}
