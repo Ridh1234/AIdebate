@@ -1,69 +1,73 @@
-# Multi-Agent Debate DAG using LangGraph (Gemini)
+# Self-Healing Classification DAG (ATG)
+# Important: This project uses a fine-tuned version of DistilBERT for all inference and evaluation. The fine-tuned model is optimized for IMDb sentiment analysis and is provided in the `my_merged_model/content/my_merged_model/` folder. Users do not need to download or prepare the original model.
 
-A CLI-based debate simulation where two AI agents (Scientist vs Philosopher) debate a user-provided topic for 8 rounds. The system uses LangGraph to orchestrate turn-taking, memory, validation, logging, and a judge that declares a winner.
+This project implements a LangGraph-based, self-healing text classification pipeline using a fine-tuned DistilBERT model (offline). It prioritizes correctness via a confidence-aware fallback that requests user clarification or uses a backup strategy.
 
-## Features
-- Two alternating agents with distinct personas
-- Exactly 8 rounds (4 per agent), strict turn control
-- Memory node that summarizes and routes only relevant context to each agent
-- Validators to prevent repeated arguments and ensure logical coherence
-- Judge node produces a debate summary and declares a winner with justification
-- Full logging of messages, memory updates, state transitions, and final verdict to a log file
-- DAG diagram generation (Graphviz)
+Highlights:
+- Offline-ready fine-tuned DistilBERT sentiment/topic classifier.
+- LangGraph DAG with InferenceNode, ConfidenceCheckNode, and FallbackNode.
+- Clean CLI built with Typer + Rich.
+- Structured logging to `logs/run.log`.
+- Graph visualization export to `artifacts/graph.png`.
 
-## Tech
-- LangGraph
-- Google Gemini (via `google-generativeai`) — set `GEMINI_API_KEY`
-- Pydantic for typed state
-- Rich for CLI output
-- Graphviz for DAG diagram
+## Quickstart
 
-## Setup
-1. Python 3.10+
-2. Install dependencies
+1) Create a virtual environment and install deps
+
 ```powershell
-python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt
-```
-3. Configure API key (create `.env` in project root)
-```
-GEMINI_API_KEY=your_key_here
+python -m venv .venv ; .\.venv\Scripts\Activate.ps1
+pip install -U pip
+pip install -e .
 ```
 
-## Run
+2) Model setup
+
+Use the files provided in the `my_merged_model/content/my_merged_model/` folder. These files contain the fine-tuned model and tokenizer required for offline inference and evaluation. No download or bootstrap is needed.
+
+3) Run the CLI
+
 ```powershell
-python -m src.main
+python -m atg.cli run
 ```
+
 Example interaction:
+
 ```
-Enter topic for debate: Should AI be regulated like medicine?
-Starting debate between Scientist and Philosopher...
-[Round 1] Scientist: ...
-...
-[Round 8] Philosopher: ...
-[Judge] Summary of debate:
-...
-[Judge] Winner: Scientist
-Reason: ...
+> The movie was painfully slow and boring.
+[InferenceNode] Predicted label: negative | Confidence: 0.54
+[ConfidenceCheckNode] Confidence too low. Triggering fallback...
+[FallbackNode] Could you clarify your intent? Was this a negative review? [y/n]: y
+Final Label: negative (Corrected via user clarification)
 ```
 
-## Outputs
-- Log file: `logs/debate_<timestamp>.log`
-- DAG diagram: `artifacts/debate_dag.png`
+4) Export graph image
 
-## Structure
-- `src/`
-  - `main.py` — CLI entrypoint
-  - `graph.py` — LangGraph DAG construction
-  - `nodes.py` — UserInputNode, AgentA/B, MemoryNode, JudgeNode
-  - `state.py` — Pydantic state models
-  - `validators.py` — turn control, repetition check, coherence
-  - `llm.py` — Gemini client wrapper and prompts
-  - `logging_utils.py` — structured logging
-  - `diagram.py` — DAG export
+```powershell
+python -m atg.cli draw
+```
+Outputs to `artifacts/graph.png`.
+
+## Project Structure
+
+- `src/atg/` core package
+  - `cli.py` Typer-based CLI entry
+  - `config.py` thresholds and model settings
+  - `logging_setup.py` structured logging
+  - `graph/flow.py` LangGraph DAG construction and visualization
+  - `nodes/` node implementations
+  - `inference.py` classifier inference with fine-tuned DistilBERT
+    - `confidence.py` confidence check and routing
+    - `fallback.py` user clarification and optional backup
+  - `utils/offline_loader.py` offline HF model/tokenizer loader
+- `artifacts/` exported graph and temp files (created at runtime)
+- `logs/` structured logs
 
 ## Notes
-- The system uses minimal prompt templates and relies on validation to keep the debate coherent and non-repetitive.
-- If Graphviz isn't installed system-wide, the PNG export may fail; you can still run the debate without the diagram.
+- This setup avoids network calls by default (`local_files_only=True`). The fine-tuned model is already provided locally as described above.
+- You can change labels and prompts in `config.py`.
 
-## Demo Video
-Record a 2–4 minute walkthrough (screen + face-cam) covering project structure, CLI run, and judge decision. Include the file or a shareable link in the repo root.
+## Dev
+```powershell
+ruff check src
+pytest -q
+```
