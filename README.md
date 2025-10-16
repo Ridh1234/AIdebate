@@ -1,5 +1,4 @@
 # Self-Healing Classification DAG (ATG)
-# Important: This project uses a fine-tuned version of DistilBERT for all inference and evaluation. The fine-tuned model is optimized for IMDb sentiment analysis and is provided in the `my_merged_model/content/my_merged_model/` folder. Users do not need to download or prepare the original model.
 
 This project implements a LangGraph-based, self-healing text classification pipeline using a fine-tuned DistilBERT model (offline). It prioritizes correctness via a confidence-aware fallback that requests user clarification or uses a backup strategy.
 
