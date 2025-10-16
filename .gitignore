@@ -26,6 +26,9 @@ models/
 **/hf_cache/
 **/models/**
 
+# Fine-tuned model output
+my_merged_model/
+
 # OS
 .DS_Store
 Thumbs.db
